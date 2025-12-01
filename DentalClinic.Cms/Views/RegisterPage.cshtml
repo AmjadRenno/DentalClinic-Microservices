@@ -1,0 +1,40 @@
+﻿@using DentalClinic.Cms.Controllers
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+
+@{
+    Layout = "master.cshtml";
+}
+
+<h1>@Model.Value("registerPageTitle")</h1>
+
+@await Html.PartialAsync("Partials/_FlashMessages")
+
+@* أخطاء Validation وغيرها *@
+@* @if (TempData["errors"] != null)
+{
+    <div style="color:red; margin-bottom:10px;">
+        @TempData["errors"]
+    </div>
+} *@
+
+@* رسائل النجاح *@
+@* @if (TempData["message"] != null)
+{
+    <div style="color:green; margin-bottom:10px;">
+        @TempData["message"]
+    </div>
+} *@
+
+@using (Html.BeginUmbracoForm<RegisterController>("SubmitRegister"))
+{
+    <label>Full Name</label><br />
+    <input type="text" name="FullName" /><br /><br />
+
+    <label>Email</label><br />
+    <input type="email" name="Email" /><br /><br />
+
+    <label>Password</label><br />
+    <input type="password" name="Password" /><br /><br />
+
+    <button type="submit">Register</button>
+}

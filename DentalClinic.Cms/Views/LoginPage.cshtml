@@ -1,0 +1,31 @@
+﻿@using DentalClinic.Cms.Models
+@using DentalClinic.Cms.Controllers
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+
+@{
+    Layout = "master.cshtml";
+}
+
+<h2>Login</h2>
+@await Html.PartialAsync("Partials/_FlashMessages")
+
+@* @if (TempData["errors"] != null)
+{
+    <p style="color:red">@TempData["errors"]</p>
+}
+
+@if (TempData["message"] != null)
+{
+    <p style="color:green">@TempData["message"]</p>
+} *@
+
+@using (Html.BeginUmbracoForm<LoginController>("SubmitLogin", FormMethod.Post))
+{
+    <label>Email</label><br />
+    <input type="email" name="Email" required /><br /><br />
+
+    <label>Password</label><br />
+    <input type="password" name="Password" required /><br /><br />
+
+    <button type="submit">Login</button>
+}

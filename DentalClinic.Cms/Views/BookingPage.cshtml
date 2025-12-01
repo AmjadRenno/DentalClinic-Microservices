@@ -1,0 +1,49 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<DentalClinic.Cms.Models.BookingViewModel>
+@using DentalClinic.Cms.Controllers
+
+@{
+    Layout = "master.cshtml";
+}
+
+<h1>Book an Appointment</h1>
+@await Html.PartialAsync("Partials/_FlashMessages")
+
+@* عرض الأخطاء *@
+@* @if (TempData["errors"] != null)
+{
+    <p style="color:red">@TempData["errors"]</p>
+} *@
+
+@* رسائل عامة (نجاح مثلاً) *@
+@* @if (TempData["message"] != null)
+{
+    <p style="color:green">@TempData["message"]</p>
+} *@
+
+@using (Html.BeginUmbracoForm<BookingController>("SubmitBooking"))
+{
+    <label>Full Name</label><br />
+    <input type="text" name="FullName" /><br /><br />
+
+    <label>Dentist</label><br />
+    <select name="DentistId">
+        <option value="">-- Select a Dentist --</option>
+
+        @if (Model?.Dentists != null)
+        {
+            foreach (var d in Model.Dentists)
+            {
+                <option value="@d.Id">@d.FullName</option>
+            }
+        }
+    </select>
+    <br /><br />
+
+    <label>Date</label><br />
+    <input type="date" name="Date" /><br /><br />
+
+    <label>Time</label><br />
+    <input type="time" name="Time" /><br /><br />
+
+    <button type="submit">Book Appointment</button>
+}

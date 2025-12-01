@@ -1,0 +1,46 @@
+﻿@using DentalClinic.Cms.Controllers
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+
+@{
+    Layout = "master.cshtml";
+
+    var bookingId = Context.Request.Query["bookingId"].ToString();
+    var amount = Context.Request.Query["amount"].ToString();
+}
+
+@* @if (TempData["PaymentSuccess"] != null)
+{
+    <p style="color: green">@TempData["PaymentSuccess"]</p>
+}
+
+@if (TempData["PaymentError"] != null)
+{
+    <p style="color: red">@TempData["PaymentError"]</p>
+} *@
+
+<h2>Payment</h2>
+@await Html.PartialAsync("Partials/_FlashMessages")
+
+
+@using (Html.BeginUmbracoForm<PaymentSurfaceController>("Submit"))
+{
+    <input type="hidden" name="BookingId" value="@bookingId" />
+    <input type="hidden" name="Amount" value="@amount" />
+
+    <label>Payment Method</label><br />
+    <select name="PaymentMethod">
+        <option value="Card">Card (Demo)</option>
+        <option value="MobilePay">MobilePay (Demo)</option>
+    </select>
+    <br /><br />
+
+    <label>Card Holder Name</label><br />
+    <input type="text" name="CardHolderName" />
+    <br /><br />
+
+    <label>Card Last 4 Digits</label><br />
+    <input type="text" name="CardLast4" maxlength="4" minlength="4" />
+    <br /><br />
+
+    <button type="submit">Pay</button>
+}

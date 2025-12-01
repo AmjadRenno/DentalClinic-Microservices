@@ -1,0 +1,113 @@
+﻿@using DentalClinic.Cms.Models
+@using DentalClinic.Cms.Services
+@using DentalClinic.Cms.Controllers
+@using Microsoft.AspNetCore.Http
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+
+@inject IAppointmentApiClient Appointments
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    Layout = "master.cshtml";
+
+    var http = HttpContextAccessor.HttpContext!;
+    var token = http.Session.GetString("jwt");
+    var role = http.Session.GetString("CurrentUserRole");
+
+    var pageTitle = Model.Value<string>("pageTitle") ?? "Dentist Admin Panel";
+    var introText = Model.Value<string>("introText");
+
+    List<AppointmentResult> appointments = new();
+
+    // ✅ فقط لو المستخدم Dentist نقرأ المواعيد من الـ API
+    if (!string.IsNullOrEmpty(token) &&
+        string.Equals(role, "Dentist", StringComparison.OrdinalIgnoreCase))
+    {
+        Appointments.SetAuthToken(token);
+
+        appointments = await Appointments.GetAdminAppointmentsAsync()
+                       ?? new List<AppointmentResult>();
+    }
+
+    // 🔹 فلترة المواعيد: نعرض فقط Requested + Confirmed وبشكل مرتب
+    var activeAppointments = (appointments ?? new List<AppointmentResult>())
+        .Where(a => a.Status == "Requested" || a.Status == "Confirmed")
+        .OrderBy(a => a.Slot?.Date)
+        .ThenBy(a => a.Slot?.Time)
+        .ToList();
+}
+
+<h1>@pageTitle</h1>
+@await Html.PartialAsync("Partials/_FlashMessages")
+
+@* @if (!string.IsNullOrWhiteSpace(introText))
+{
+    <div>
+        @Html.Raw(introText)
+    </div>
+} *@
+
+@* @if (TempData["dashboardMessage"] != null)
+{
+    <p>@TempData["dashboardMessage"]</p>
+} *@
+
+@if (string.IsNullOrEmpty(HttpContextAccessor.HttpContext!.Session.GetString("jwt")))
+{
+    <p>You must be logged in to see the appointments.</p>
+    <p><a href="/login">Go to login</a></p>
+}
+else if (!string.Equals(HttpContextAccessor.HttpContext!.Session.GetString("CurrentUserRole"), "Dentist", StringComparison.OrdinalIgnoreCase))
+{
+    <p>You are not allowed to access this page.</p>
+}
+else if (activeAppointments == null || !activeAppointments.Any())
+{
+    <p>No active appointments found.</p>
+}
+else
+{
+    <table border="1" cellpadding="5">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Patient / Dentist</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var a in activeAppointments)
+        {
+            <tr>
+                <td>@a.Slot?.Date</td>
+                <td>@a.Slot?.Time</td>
+                <td>@a.DentistName</td> @* لاحقاً ممكن تستخدم اسم المريض لو أضفته *@
+                <td>@a.Status</td>
+                <td>
+                    @* Confirm فقط لو Requested *@
+                    @if (a.Status == "Requested")
+                    {
+                        @using (Html.BeginUmbracoForm<DentistDashboardController>("Confirm"))
+                        {
+                            @Html.Hidden("appointmentId", a.Id)
+                            <button type="submit" style="display:inline;">Confirm</button>
+                        }
+                    }
+
+                    @* Cancel ما عدا لو بالفعل Cancelled أو Completed *@
+                    @if (a.Status != "Cancelled" && a.Status != "Completed")
+                    {
+                        @using (Html.BeginUmbracoForm<DentistDashboardController>("Cancel"))
+                        {
+                            @Html.Hidden("appointmentId", a.Id)
+                            <button type="submit" style="display:inline; margin-left:4px;">Cancel</button>
+                        }
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}

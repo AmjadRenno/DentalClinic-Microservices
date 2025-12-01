@@ -1,0 +1,50 @@
+﻿@page "/appointment"
+@inject AppointmentServiceClient Http
+@inject ILogger<Appointment> Logger
+@rendermode InteractiveServer
+
+<h3>Book an Appointment</h3>
+
+<div>
+    <input @bind="patientName" placeholder="Patient name" />
+    <input type="date" @bind="appointmentDate" />
+    <input type="number" @bind="appointmentsToday" placeholder="Appointments today" />
+    <input type="number" step="0.01" @bind="amount" placeholder="Amount (DKK)" />
+    <button @onclick="StartWorkflow">Start Workflow</button>
+</div>
+
+@if (!string.IsNullOrEmpty(instanceId))
+{
+    <p>Instance ID: @instanceId</p>
+    <button @onclick="CheckStatus">Check Status</button>
+    <pre>@statusJson</pre>
+}
+
+@code {
+    string patientName = "Amjad Renno";
+    DateOnly appointmentDate = DateOnly.FromDateTime(DateTime.Today);
+    int appointmentsToday = 3;
+    decimal amount = 500m;
+
+    string? instanceId;
+    string? statusJson;
+
+    record AppointmentInput(string PatientName, DateOnly Date, int NumberOfAppointmentsToday, decimal Amount);
+
+    async Task StartWorkflow()
+    {
+        Logger.LogInformation("Starting appointment workflow...");
+        var resp = await Http.HttpClient.PostAsJsonAsync("api/appointment/start",
+            new AppointmentInput(patientName, appointmentDate, appointmentsToday, amount));
+        var payload = await resp.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+        instanceId = payload?["instanceId"];
+    }
+
+    async Task CheckStatus()
+    {
+        if (instanceId is null) return;
+        Logger.LogInformation("Checking workflow status...");
+        var resp = await Http.HttpClient.GetAsync($"api/appointment/status/{instanceId}");
+        statusJson = await resp.Content.ReadAsStringAsync();
+    }
+}

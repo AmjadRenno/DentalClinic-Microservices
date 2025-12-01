@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Sdk Name="Aspire.AppHost.Sdk" Version="9.5.1" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>79717979-7350-4c3e-94b4-c865ad9d7e92</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="13.0.0" />
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.Dapr" Version="9.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AuthService.API\AuthService.API.csproj" />
+    <ProjectReference Include="..\BookingService\BookingService.csproj" />
+    <ProjectReference Include="..\Booking\BookingService.API\BookingService.API.csproj" />
+    <ProjectReference Include="..\DentistService.API\DentistService.API.csproj" />
+    <ProjectReference Include="..\GatewayService\GatewayService.csproj" />
+    <ProjectReference Include="..\NotificationService.API\NotificationService.API.csproj" />
+    <ProjectReference Include="..\OrchestratorService\OrchestratorService.csproj" />
+    <ProjectReference Include="..\PatientService.API\PatientService.API.csproj" />
+    <ProjectReference Include="..\PaymentService\PaymentService.csproj" />
+    <ProjectReference Include="..\Payment\PaymentService.API\PaymentService.API.csproj" />
+  </ItemGroup>
+
+</Project>

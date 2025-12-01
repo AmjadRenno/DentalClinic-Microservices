@@ -1,0 +1,105 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<object>
+@using Umbraco.Cms.Core.Models.PublishedContent
+@using System.Linq
+@using Microsoft.AspNetCore.Http
+@using DentalClinic.Cms.Controllers
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    Layout = null;
+
+    // نجيب الـ root من Umbraco (Home)
+    var root = Umbraco?.ContentAtRoot()?.FirstOrDefault();
+    var siteName = root?.Name ?? "Dental Clinic";
+
+    // 👈 نحدد عنوان الصفحة حسب نوع الـ Model
+    string pageTitle;
+    if (Model is IPublishedContent content)
+    {
+        pageTitle = content.Name ?? "Page";
+    }
+    else
+    {
+        pageTitle = Model?.GetType().Name ?? "Page";
+    }
+
+    var http = HttpContextAccessor.HttpContext;
+    var isLoggedIn = !string.IsNullOrEmpty(http?.Session.GetString("jwt"));
+    var currentRole = http?.Session.GetString("CurrentUserRole") ?? "Patient";
+    var currentEmail = http?.Session.GetString("CurrentUserEmail") ?? "";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@pageTitle - @siteName</title>
+    <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+    <header>
+        <nav>
+            @* رابط الـ Home *@
+            @if (root != null)
+            {
+                <a href="@root.Url()">Home</a>
+
+                // 👤 نحدد مرة واحدة خارج اللوب
+                var isDentist = string.Equals(currentRole, "Dentist", StringComparison.OrdinalIgnoreCase);
+
+                foreach (var child in root.Children)
+                {
+                    var alias = child.ContentType.Alias;
+
+                    // ✅ Booking و MyAppointments فقط لغير الـ Dentist (المريض)
+                    if (!isDentist && alias == "bookingPage")
+                    {
+                        <a href="@child.Url()">Booking</a>
+                    }
+
+                    if (!isDentist && alias == "myAppointmentsPage" && isLoggedIn)
+                    {
+                        <a href="@child.Url()">My appointments</a>
+                    }
+
+                    // ✅ Dentist Dashboard فقط لو الدور Dentist
+                    if (isDentist && alias == "dentistDashboardPage" && isLoggedIn)
+                    {
+                        <a href="@child.Url()">Dentist dashboard</a>
+                    }
+
+                    // ✅ Login / Register فقط لو المستخدم غير مسجّل
+                    if (!isLoggedIn && alias == "loginPage")
+                    {
+                        <a href="@child.Url()">Login</a>
+                    }
+
+                    if (!isLoggedIn && alias == "registerPage")
+                    {
+                        <a href="@child.Url()">Register</a>
+                    }
+                }
+            }
+
+            @* زر Logout عام يظهر فقط لو المستخدم مسجّل دخول *@
+            @if (isLoggedIn)
+            {
+                @using (Html.BeginUmbracoForm<LoginController>("Logout", FormMethod.Post, new { @class = "logout-form" }))
+                {
+                    <button type="submit">
+                        Logout@(string.IsNullOrEmpty(currentEmail) ? "" : $" ({currentEmail})")
+                    </button>
+                }
+            }
+        </nav>
+    </header>
+
+    <main>
+        @RenderBody()
+    </main>
+
+    <footer>
+        <p>© @DateTime.Now.Year - @siteName</p>
+    </footer>
+</body>
+</html>
