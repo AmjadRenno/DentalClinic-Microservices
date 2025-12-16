@@ -7,11 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\shared\DentalClinic.SharedKernel\DentalClinic.SharedKernel.csproj" />
+    <Compile Remove="Primitives\**" />
+    <EmbeddedResource Remove="Primitives\**" />
+    <None Remove="Primitives\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Primitives\" />
+    <ProjectReference Include="..\..\shared\DentalClinic.SharedKernel\DentalClinic.SharedKernel.csproj" />
   </ItemGroup>
 
 </Project>

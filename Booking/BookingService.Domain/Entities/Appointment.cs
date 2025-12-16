@@ -32,7 +32,7 @@ namespace BookingService.Domain.Entities
             Status = AppointmentStatus.Requested;
         }
 
-        // Constructor فارغ خاص بـ EF Core
+        // Empty constructor for EF Core
         private Appointment() : base(Guid.Empty) { }
 
         public void Confirm()

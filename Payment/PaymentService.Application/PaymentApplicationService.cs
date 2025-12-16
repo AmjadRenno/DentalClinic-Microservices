@@ -19,12 +19,10 @@ public class PaymentApplicationService
         var payment = new Payment(
             Guid.NewGuid(),
             evt.AppointmentId,
-            new Money(500, "DKK") // مبلغ افتراضي مؤقت
+            new Money(500, "DKK") // Fixed amount for MVP
         );
 
         await _repository.AddAsync(payment);
-
-        Console.WriteLine($"💰 Payment created for appointment {evt.AppointmentId}");
     }
 
     public async Task HandleCreate(Guid paymentId, Guid appointmentId, decimal totalAmount)

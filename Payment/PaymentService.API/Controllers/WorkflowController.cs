@@ -21,7 +21,7 @@ public class WorkflowController : ControllerBase
         if (request.Amount <= 0)
             return Ok(new PaymentResult(false, "Invalid payment amount."));
 
-        // منطق تجريبي
+        // Test logic
         return Ok(new PaymentResult(true, $"Payment of {request.Amount} DKK completed."));
     }
 }

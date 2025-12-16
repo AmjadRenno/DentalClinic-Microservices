@@ -15,12 +15,12 @@ public class BookingDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // تعيين الـKey
+        // Configure primary key
         modelBuilder.Entity<Appointment>(b =>
         {
             b.HasKey(a => a.Id);
 
-            // تهيئة الـValueObjects كملكية مملوكة (Owned)
+            // Configure ValueObjects as Owned entities
             b.OwnsOne(a => a.PatientId, p =>
             {
                 p.Property(v => v.Value).HasColumnName("PatientId");

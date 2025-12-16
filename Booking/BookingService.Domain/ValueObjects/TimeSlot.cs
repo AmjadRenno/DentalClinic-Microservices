@@ -14,7 +14,6 @@ namespace BookingService.Domain.ValueObjects
             if (end <= start)
                 throw new ArgumentException("End time must be after start time.", nameof(end));
 
-            // ممكن تضيف تحقق آخر لاحقاً (عدم الحجز في الماضي مثلاً)
             Start = start;
             End = end;
         }

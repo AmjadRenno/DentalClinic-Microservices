@@ -19,14 +19,14 @@ public class PaymentDbContext : DbContext
         {
             b.HasKey(p => p.Id);
 
-            // ✅ نربط ValueObject (Money) كـ Owned type
+            // Configure ValueObject (Money) as Owned type
             b.OwnsOne(p => p.Total, mv =>
             {
                 mv.Property(v => v.Amount).HasColumnName("Amount");
                 mv.Property(v => v.Currency).HasColumnName("Currency");
             });
 
-            // ✅ نحول Enum إلى string في قاعدة البيانات
+            // Convert Enum to string in the database
             b.Property(p => p.Status)
                 .HasConversion<string>()
                 .HasColumnName("Status");

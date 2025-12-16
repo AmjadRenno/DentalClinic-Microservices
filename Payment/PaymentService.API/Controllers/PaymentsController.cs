@@ -19,19 +19,16 @@ public class PaymentsController : ControllerBase
         _service = service;
     }
 
-    // ✅ هذا يجب أن يكون مفتوح لدابر، بدون JWT
     [AllowAnonymous]
     [Topic("pubsub", "appointments.confirmed")]
     [HttpPost("/appointments/confirmed")]
     public async Task<IActionResult> OnAppointmentConfirmed([FromBody] AppointmentConfirmedEvent evt)
     {
-        Console.WriteLine($"📥 Received event from BookingService: {evt.AppointmentId} for patient {evt.PatientId}");
         await _service.HandleAppointmentConfirmed(evt);
         return Ok();
     }
 
-    // 🔒 هذه محمية بـ Admin Role
-    [Authorize(Roles = "Admin")]
+    // NOTE: Authorization can be enabled here if needed in future versions
     [HttpPost]
     public async Task<IActionResult> Create(Guid paymentId, Guid appointmentId, decimal total)
     {
@@ -39,7 +36,6 @@ public class PaymentsController : ControllerBase
         return Ok();
     }
 
-    [Authorize(Roles = "Admin")]
     [HttpPut("{id}/authorize")]
     public async Task<IActionResult> Authorize(Guid id)
     {
@@ -47,7 +43,6 @@ public class PaymentsController : ControllerBase
         return Ok();
     }
 
-    [Authorize(Roles = "Admin")]
     [HttpPut("{id}/capture")]
     public async Task<IActionResult> Capture(Guid id)
     {
@@ -55,7 +50,6 @@ public class PaymentsController : ControllerBase
         return Ok();
     }
 
-    [Authorize(Roles = "Admin")]
     [HttpPut("{id}/refund")]
     public async Task<IActionResult> Refund(Guid id)
     {

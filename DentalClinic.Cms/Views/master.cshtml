@@ -6,13 +6,13 @@
 @inject IHttpContextAccessor HttpContextAccessor
 
 @{
-    Layout = null;
+Layout = null;
 
-    // نجيب الـ root من Umbraco (Home)
-    var root = Umbraco?.ContentAtRoot()?.FirstOrDefault();
-    var siteName = root?.Name ?? "Dental Clinic";
+// Get the root from Umbraco (Home)
+var root = Umbraco?.ContentAtRoot()?.FirstOrDefault();
+var siteName = root?.Name ?? "Dental Clinic";
 
-    // 👈 نحدد عنوان الصفحة حسب نوع الـ Model
+// Determine page title based on Model type
     string pageTitle;
     if (Model is IPublishedContent content)
     {
@@ -39,19 +39,19 @@
 <body>
     <header>
         <nav>
-            @* رابط الـ Home *@
+            @* Home link *@
             @if (root != null)
             {
                 <a href="@root.Url()">Home</a>
 
-                // 👤 نحدد مرة واحدة خارج اللوب
+                // Determine once outside the loop
                 var isDentist = string.Equals(currentRole, "Dentist", StringComparison.OrdinalIgnoreCase);
 
                 foreach (var child in root.Children)
                 {
                     var alias = child.ContentType.Alias;
 
-                    // ✅ Booking و MyAppointments فقط لغير الـ Dentist (المريض)
+                    // Booking and MyAppointments only for non-Dentist (Patient)
                     if (!isDentist && alias == "bookingPage")
                     {
                         <a href="@child.Url()">Booking</a>
@@ -62,13 +62,13 @@
                         <a href="@child.Url()">My appointments</a>
                     }
 
-                    // ✅ Dentist Dashboard فقط لو الدور Dentist
+                    // Dentist Dashboard only if role is Dentist
                     if (isDentist && alias == "dentistDashboardPage" && isLoggedIn)
                     {
                         <a href="@child.Url()">Dentist dashboard</a>
                     }
 
-                    // ✅ Login / Register فقط لو المستخدم غير مسجّل
+                    // Login / Register only if user is not logged in
                     if (!isLoggedIn && alias == "loginPage")
                     {
                         <a href="@child.Url()">Login</a>
@@ -81,7 +81,7 @@
                 }
             }
 
-            @* زر Logout عام يظهر فقط لو المستخدم مسجّل دخول *@
+            @* Logout button - only shows if user is logged in *@
             @if (isLoggedIn)
             {
                 @using (Html.BeginUmbracoForm<LoginController>("Logout", FormMethod.Post, new { @class = "logout-form" }))

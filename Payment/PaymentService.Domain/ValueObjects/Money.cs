@@ -14,6 +14,6 @@ public sealed record Money
         Currency = currency;
     }
 
-    // السماح بالتحويل الضمني من decimal إلى Money
+    // Allow implicit conversion from decimal to Money
     public static implicit operator Money(decimal value) => new(value);
 }

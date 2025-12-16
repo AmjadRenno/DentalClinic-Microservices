@@ -1,4 +1,4 @@
-﻿/* ====== Reset بسيط ====== */
+﻿/* ====== Simple Reset ====== */
 body {
     margin: 0;
     padding: 0;
@@ -7,7 +7,7 @@ body {
     color: #222;
 }
 
-/* ====== Layout عام ====== */
+/* ====== General Layout ====== */
 header {
     background-color: #004f7a;
     color: #fff;
@@ -92,7 +92,7 @@ button {
         background-color: #005fa3;
     }
 
-/* ====== الجداول (المواعيد) ====== */
+/* ====== Tables (Appointments) ====== */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -110,7 +110,7 @@ th {
     background-color: #f0f4f8;
 }
 
-/* ====== رسائل الفلاش ====== */
+/* ====== Flash Messages ====== */
 .flash-messages {
     margin-bottom: 15px;
 }

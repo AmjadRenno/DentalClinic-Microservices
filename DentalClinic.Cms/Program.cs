@@ -12,19 +12,12 @@ builder.Services.AddHttpClient<IAuthApiClient, AuthApiClient>(client =>
     client.BaseAddress = new Uri("https://localhost:7168"); // Gateway URL
 });
 
-builder.Services.AddHttpClient<IUserRegistrationApiClient, UserRegistrationApiClient>(client =>
-{
-    client.BaseAddress = new Uri("https://localhost:7168"); // Gateway URL
-});
-
-builder.Services.AddHttpClient<IDentistApiClient, DentistApiClient>(client =>
-{
-    client.BaseAddress = new Uri("https://localhost:7168"); // Gateway URL
-});
+// Simple in-memory dentist service (no external API)
+builder.Services.AddSingleton<IDentistApiClient, InMemoryDentistApiClient>();
 
 builder.Services.AddHttpClient("Gateway", client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7168"); // عدّل القيمة حسب URL الـ API Gateway
+    client.BaseAddress = new Uri("https://localhost:7168"); // Adjust the value according to your API Gateway URL
 });
 
 builder.Services.AddHttpClient("PaymentService", client =>
@@ -54,7 +47,16 @@ WebApplication app = builder.Build();
 
 await app.BootUmbracoAsync();
 
-// 🟢 جلسة قبل Umbraco
+// HSTS only outside Development
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+
+// Redirect to HTTPS
+app.UseHttpsRedirection();
+
+// Session before Umbraco
 app.UseSession();
 
 app.UseUmbraco()

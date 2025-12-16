@@ -1,11 +1,8 @@
 ﻿using BookingService.Application;
 using BookingService.Application.Commands;
 using BookingService.Application.Queries;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
-using BookingService.Infrastructure.Data; // 👈 عدّل الـ namespace حسب BookingDbContext عندك
+using BookingService.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookingService.API.Controllers;
@@ -15,7 +12,7 @@ namespace BookingService.API.Controllers;
 public class AppointmentsController : ControllerBase
 {
     private readonly BookingApplicationService _appService;
-    private readonly BookingDbContext _db;   // 👈 جديد
+    private readonly BookingDbContext _db;
 
     public AppointmentsController(BookingApplicationService appService, BookingDbContext db)
     {
@@ -23,7 +20,7 @@ public class AppointmentsController : ControllerBase
         _db = db;
     }
 
-    //[Authorize]
+    // JWT validation is handled in the API Gateway
     [HttpPost]
     public async Task<IActionResult> Create(RequestAppointmentCommand command)
     {
@@ -31,7 +28,7 @@ public class AppointmentsController : ControllerBase
         return Ok();
     }
 
-    //[Authorize(Roles = "Admin")]
+    // JWT validation is handled in the API Gateway
     [HttpPut("confirm")]
     public async Task<IActionResult> Confirm(ConfirmAppointmentCommand command)
     {
@@ -39,7 +36,7 @@ public class AppointmentsController : ControllerBase
         return Ok();
     }
 
-    //[Authorize(Roles = "Admin")]
+    // JWT validation is handled in the API Gateway
     [HttpPut("cancel")]
     public async Task<IActionResult> Cancel(CancelAppointmentCommand command)
     {
@@ -47,7 +44,7 @@ public class AppointmentsController : ControllerBase
         return Ok();
     }
 
-    //[Authorize(Roles = "Admin")]
+    // JWT validation is handled in the API Gateway
     [HttpPut("reschedule")]
     public async Task<IActionResult> Reschedule(RescheduleAppointmentCommand command)
     {
@@ -55,11 +52,11 @@ public class AppointmentsController : ControllerBase
         return Ok();
     }
 
-    // [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    // JWT validation is handled in the API Gateway
     [HttpGet("mine")]
     public async Task<IActionResult> GetMine()
     {
-        // نقرأ الـ userId الذي أرسله الـ Gateway
+        // Read the userId sent by the Gateway
         var userId = Request.Headers["X-UserId"].FirstOrDefault();
 
         if (string.IsNullOrEmpty(userId))
@@ -75,7 +72,7 @@ public class AppointmentsController : ControllerBase
         var query = HttpContext.RequestServices.GetRequiredService<GetAppointmentsByPatientQuery>();
         var appointments = await query.Handle(patientGuid);
 
-        // نحول الـ Domain entities إلى DTOs بسيطة
+        // Convert Domain entities to simple DTOs
         var result = appointments.Select(a => new
         {
             id = a.Id,
@@ -91,9 +88,9 @@ public class AppointmentsController : ControllerBase
         return Ok(result);
     }
 
-    // 🔹 Endpoint للأدمن — يعيد كل المواعيد
-    [HttpGet("admin")]
-    public async Task<IActionResult> GetAllForAdmin()
+    // JWT validation is handled in the API Gateway
+    [HttpGet("dentist")]
+    public async Task<IActionResult> GetAllForDentist()
     {
         var appointments = await _db.Appointments.ToListAsync();
 
@@ -111,7 +108,4 @@ public class AppointmentsController : ControllerBase
 
         return Ok(result);
     }
-
-
-
 }

@@ -23,7 +23,6 @@ public class LoginController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        // نعتبر أن Username = Email
         var user = await _userService.ValidateUserAsync(request.Username, request.Password);
 
         if (user is null)
@@ -38,7 +37,6 @@ public class LoginController : ControllerBase
             new Claim(ClaimTypes.Name, user.FullName),
             new Claim(ClaimTypes.Email, user.Email),
 
-            // 🔹 مهم: نأخذ الدور من قاعدة البيانات، وليس ثابت "Patient"
             new Claim(ClaimTypes.Role, user.Role ?? "Patient")
         };
 
@@ -52,7 +50,6 @@ public class LoginController : ControllerBase
 
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
-        // 🔹 نرجّع أيضاً الدور في الـ JSON (لو حبينا نستخدمه لاحقاً في الـ CMS)
         return Ok(new
         {
             token = tokenString,

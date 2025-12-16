@@ -8,8 +8,6 @@ namespace DentalClinic.Cms.Models
         public int AppointmentId { get; set; }
         public DateTime Start { get; set; }
         public string Status { get; set; } = string.Empty;
-
-        // ممكن نستخدمه لاحقاً عندما نربط PatientService
         public string? PatientName { get; set; }
     }
 

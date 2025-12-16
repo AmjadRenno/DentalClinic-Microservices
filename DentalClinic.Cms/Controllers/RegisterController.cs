@@ -13,9 +13,8 @@ using System.Linq;
 
 namespace DentalClinic.Cms.Controllers
 {
-    public class RegisterController : SurfaceController // RegisterController DentalClinic.Cms
+    public class RegisterController : SurfaceController
     {
-        private readonly IUserRegistrationApiClient _userApi;
         private readonly IAuthApiClient _authApi;
 
         public RegisterController(
@@ -25,11 +24,9 @@ namespace DentalClinic.Cms.Controllers
             AppCaches appCaches,
             IProfilingLogger logger,
             IPublishedUrlProvider publishedUrlProvider,
-            IUserRegistrationApiClient userApi,
             IAuthApiClient authApi
         ) : base(umbracoContextAccessor, databaseFactory, services, appCaches, logger, publishedUrlProvider)
         {
-            _userApi = userApi;
             _authApi = authApi;
         }
 
@@ -48,8 +45,8 @@ namespace DentalClinic.Cms.Controllers
                 return RedirectToCurrentUmbracoPage();
             }
 
-            // 1) تسجيل في AuthService عبر Gateway
-            var registered = await _userApi.RegisterUserAsync(model);
+            // 1) Register in AuthService via Gateway
+            var registered = await _authApi.RegisterAsync(model);
 
             if (!registered)
             {
@@ -57,7 +54,7 @@ namespace DentalClinic.Cms.Controllers
                 return RedirectToCurrentUmbracoPage();
             }
 
-            // 2) Login أوتوماتيكي للحصول على JWT + Role
+            // 2) Automatic login to get JWT + Role
             var loginResult = await _authApi.LoginAsync(model.Email, model.Password);
 
             if (loginResult != null && !string.IsNullOrEmpty(loginResult.token))

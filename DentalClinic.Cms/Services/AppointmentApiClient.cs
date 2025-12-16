@@ -13,7 +13,7 @@ namespace DentalClinic.Cms.Services
     public interface IAppointmentApiClient
     {
         Task<List<AppointmentResult>> GetMyAppointmentsAsync();
-        Task<List<AppointmentResult>> GetAdminAppointmentsAsync();  // 👈 جديد
+        Task<List<AppointmentResult>> GetDentistAppointmentsAsync();  // Changed from GetAdminAppointmentsAsync
         Task<Guid?> CreateAppointmentAsync(BookingFormModel model);
         Task<bool> CancelAppointmentAsync(Guid appointmentId);
         Task<bool> ConfirmAppointmentAsync(Guid appointmentId);
@@ -25,7 +25,7 @@ namespace DentalClinic.Cms.Services
     public class AppointmentApiClient : IAppointmentApiClient
     {
         private readonly HttpClient _http;
-        private readonly IDentistApiClient _dentists;   // 👈 تمت الإضافة
+        private readonly IDentistApiClient _dentists;   // Added
 
 
         public AppointmentApiClient(HttpClient http, IDentistApiClient dentists)
@@ -43,7 +43,7 @@ namespace DentalClinic.Cms.Services
             if (string.IsNullOrWhiteSpace(token))
                 return;
 
-            // لو في التوكن "Bearer " في البداية نشيلها
+            // If token has "Bearer " prefix, remove it
             if (token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
             {
                 token = token.Substring("Bearer ".Length);
@@ -63,9 +63,9 @@ namespace DentalClinic.Cms.Services
 
             if (!response.IsSuccessStatusCode)
             {
-                var body = await response.Content.ReadAsStringAsync(); // 👈 الجديد
+                var body = await response.Content.ReadAsStringAsync(); // New addition
 
-                // أثناء التطوير فقط – يساعدنا نرى الخطأ الحقيقي
+                // During development only – helps us see the real error
                 throw new Exception($"Error calling /api/appointments/mine. " +
                                     $"Status: {(int)response.StatusCode} {response.ReasonPhrase}. " +
                                     $"Body: {body}");
@@ -89,14 +89,14 @@ namespace DentalClinic.Cms.Services
             return appointments;
         }
 
-        public async Task<List<AppointmentResult>> GetAdminAppointmentsAsync()
+        public async Task<List<AppointmentResult>> GetDentistAppointmentsAsync()
         {
-            var response = await _http.GetAsync("/api/appointments/admin");
+            var response = await _http.GetAsync("/api/appointments/dentist");
 
             if (!response.IsSuccessStatusCode)
             {
                 var body = await response.Content.ReadAsStringAsync();
-                throw new Exception($"Error calling /api/appointments/admin. " +
+                throw new Exception($"Error calling /api/appointments/dentist. " +
                                     $"Status: {(int)response.StatusCode} {response.ReasonPhrase}. " +
                                     $"Body: {body}");
             }
@@ -138,7 +138,7 @@ namespace DentalClinic.Cms.Services
 
             var patientId = Guid.Parse(userIdClaim.Value);
 
-            var appointmentId = Guid.NewGuid(); // ← سنستخدمه في كل من العميل + الخدمة
+            var appointmentId = Guid.NewGuid(); // We'll use this in both client and service
 
             var command = new
             {
@@ -154,7 +154,7 @@ namespace DentalClinic.Cms.Services
             if (!response.IsSuccessStatusCode)
                 return null;
 
-            return appointmentId; // ← تم!
+            return appointmentId; // Done!
         }
 
 
@@ -170,13 +170,13 @@ namespace DentalClinic.Cms.Services
 
         public async Task<bool> ConfirmAppointmentAsync(Guid appointmentId)
         {
-            // الـ BookingService يتوقع ConfirmAppointmentCommand مع AppointmentId
+            // BookingService expects ConfirmAppointmentCommand with AppointmentId
             var payload = new
             {
                 AppointmentId = appointmentId
             };
 
-            // نمرّ عبر الـ Gateway: /api/appointments/confirm
+            // Pass through the Gateway: /api/appointments/confirm
             var response = await _http.PutAsJsonAsync("/api/appointments/confirm", payload);
 
             return response.IsSuccessStatusCode;

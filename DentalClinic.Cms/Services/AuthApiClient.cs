@@ -1,6 +1,7 @@
 ﻿using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using DentalClinic.Cms.Models;
 using static DentalClinic.Cms.Services.AuthApiClient;
 
 namespace DentalClinic.Cms.Services
@@ -8,6 +9,7 @@ namespace DentalClinic.Cms.Services
     public interface IAuthApiClient
     {
         Task<LoginResult?> LoginAsync(string email, string password);
+        Task<bool> RegisterAsync(RegisterFormModel model);
     }
 
     public class AuthApiClient : IAuthApiClient
@@ -33,10 +35,16 @@ namespace DentalClinic.Cms.Services
             return json;
         }
 
+        public async Task<bool> RegisterAsync(RegisterFormModel model)
+        {
+            var response = await _httpClient.PostAsJsonAsync("/auth/register", model);
+            return response.IsSuccessStatusCode;
+        }
+
         public class LoginResult
         {
             public string token { get; set; } = string.Empty;
-            public string? role { get; set; }   // 👈 مهم: نقرأ الدور من الـ JSON
+            public string? role { get; set; }
         }
     }
 }

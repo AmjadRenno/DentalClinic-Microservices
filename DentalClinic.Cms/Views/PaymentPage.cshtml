@@ -8,15 +8,6 @@
     var amount = Context.Request.Query["amount"].ToString();
 }
 
-@* @if (TempData["PaymentSuccess"] != null)
-{
-    <p style="color: green">@TempData["PaymentSuccess"]</p>
-}
-
-@if (TempData["PaymentError"] != null)
-{
-    <p style="color: red">@TempData["PaymentError"]</p>
-} *@
 
 <h2>Payment</h2>
 @await Html.PartialAsync("Partials/_FlashMessages")

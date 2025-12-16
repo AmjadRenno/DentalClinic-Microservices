@@ -17,15 +17,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AuthService.API\AuthService.API.csproj" />
-    <ProjectReference Include="..\BookingService\BookingService.csproj" />
     <ProjectReference Include="..\Booking\BookingService.API\BookingService.API.csproj" />
-    <ProjectReference Include="..\DentistService.API\DentistService.API.csproj" />
     <ProjectReference Include="..\GatewayService\GatewayService.csproj" />
-    <ProjectReference Include="..\NotificationService.API\NotificationService.API.csproj" />
     <ProjectReference Include="..\OrchestratorService\OrchestratorService.csproj" />
-    <ProjectReference Include="..\PatientService.API\PatientService.API.csproj" />
-    <ProjectReference Include="..\PaymentService\PaymentService.csproj" />
     <ProjectReference Include="..\Payment\PaymentService.API\PaymentService.API.csproj" />
+    <ProjectReference Include="..\DentalClinic.Cms\DentalClinic.Cms.csproj" />
   </ItemGroup>
 
 </Project>

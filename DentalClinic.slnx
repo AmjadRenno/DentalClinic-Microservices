@@ -10,15 +10,6 @@
     <Project Path="Booking/BookingService.Infrastructure/BookingService.Infrastructure.csproj" />
     <Project Path="services/Booking/BookingService.Domain.Tests/BookingService.Domain.Tests.csproj" />
   </Folder>
-  <Folder Name="/services/Dentist/">
-    <Project Path="DentistService.API/DentistService.API.csproj" />
-  </Folder>
-  <Folder Name="/services/Notification/">
-    <Project Path="NotificationService.API/NotificationService.API.csproj" />
-  </Folder>
-  <Folder Name="/services/Patient/">
-    <Project Path="PatientService.API/PatientService.API.csproj" />
-  </Folder>
   <Folder Name="/services/Payment/">
     <Project Path="Payment/PaymentService.API/PaymentService.API.csproj" />
     <Project Path="Payment/PaymentService.Application/PaymentService.Application.csproj" />

@@ -37,10 +37,9 @@ public class BookingApplicationService
         appointment.Confirm();
         await _repository.UpdateAsync(appointment);
 
-        // ✅ نشر الحدث عبر Dapr Pub/Sub
+        // Publish event via Dapr Pub/Sub
         var evt = new AppointmentConfirmedEvent(appointment.Id, appointment.PatientId.Value);
         await _daprClient.PublishEventAsync("pubsub", "appointments.confirmed", evt);
-        Console.WriteLine($"📤 Published event to pubsub: appointments.confirmed ({evt.AppointmentId})");
     }
 
     public async Task Handle(CancelAppointmentCommand command)

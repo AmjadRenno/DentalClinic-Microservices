@@ -18,7 +18,6 @@ namespace DentalClinic.Cms.Controllers
 
         public override IActionResult Index()
         {
-            // ✅ لا نرسل List ولا شيء، فقط الـ Content الحالي
             return CurrentTemplate(CurrentPage);
         }
     }

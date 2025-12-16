@@ -3,17 +3,19 @@ using Dapr.Workflow;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.AddServiceDefaults();  // Aspire telemetry, health, service discovery
+//  Shared Aspire settings (Telemetry, Health, Service Discovery)
+builder.AddServiceDefaults();
 
-// إضافة Dapr client + Workflow
+// Add Dapr client + Workflow
 builder.Services.AddDaprClient();
 builder.Services.AddDaprWorkflow(opts =>
 {
     opts.RegisterWorkflow<AppointmentWorkflow>();
-    opts.RegisterActivity<ReserveAppointmentActivity>();
-    opts.RegisterActivity<ProcessPaymentActivity>();
-    opts.RegisterActivity<SendNotificationActivity>();
 
+    // Register the three activities
+    opts.RegisterActivity<ValidateAppointmentActivity>();
+    opts.RegisterActivity<ReserveSlotActivity>();
+    opts.RegisterActivity<SendNotificationActivity>();
 });
 
 builder.Services.AddEndpointsApiExplorer();
@@ -27,112 +29,151 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-
-// API لبدء workflow والتحقق من الحالة
+// Endpoint to start the workflow
 app.MapPost("appointment/start", async (AppointmentInput input, DaprWorkflowClient wf, ILogger<Program> logger) =>
 {
     logger.LogInformation("Starting appointment workflow for {PatientName} on {Date}", input.PatientName, input.Date);
     var instanceId = Guid.NewGuid().ToString("N");
+
     await wf.ScheduleNewWorkflowAsync(nameof(AppointmentWorkflow), instanceId, input);
+
     return Results.Ok(new { instanceId });
 });
 
+// Endpoint to track status + return Output (AppointmentResult)
 app.MapGet("appointment/status/{id}", async (string id, DaprWorkflowClient wf) =>
 {
     var state = await wf.GetWorkflowStateAsync(id);
-    return Results.Ok(state);
+
+    if (state is null || !state.Exists)
+    {
+        return Results.NotFound(new { message = "Workflow instance not found." });
+    }
+
+    // Return the same state that you saw in Swagger (exists, isWorkflowCompleted, ...)
+    return Results.Ok(new
+    {
+        state.Exists,
+        state.IsWorkflowRunning,
+        state.IsWorkflowCompleted,
+        state.CreatedAt,
+        state.LastUpdatedAt,
+        state.RuntimeStatus
+    });
 });
+
 
 app.MapDefaultEndpoints();
 app.Run();
 
 
-// ---------- Workflow + Activities ----------
+// ----------------- WORKFLOW -----------------
 
 public class AppointmentWorkflow : Workflow<AppointmentInput, AppointmentResult>
 {
     public override async Task<AppointmentResult> RunAsync(WorkflowContext ctx, AppointmentInput input)
     {
-        // 1️⃣ الحجز
-        var booking = await ctx.CallActivityAsync<BookingResult>(nameof(ReserveAppointmentActivity), input);
-        if (!booking.Success)
-            return new AppointmentResult(false, $"Booking failed: {booking.Message}");
+        // 1️⃣ Validate the appointment (date + daily limits)
+        var validation = await ctx.CallActivityAsync<ValidationResult>(nameof(ValidateAppointmentActivity), input);
+        if (!validation.Success)
+        {
+            return new AppointmentResult(false, $"Validation failed: {validation.Message}");
+        }
 
-        // 2️⃣ الدفع
-        var payment = await ctx.CallActivityAsync<PaymentResult>(nameof(ProcessPaymentActivity), input);
-        if (!payment.Success)
-            return new AppointmentResult(false, $"Payment failed: {payment.Message}");
+        // 2️⃣ Reserve (lock) the Timeslot in the state store
+        var reservation = await ctx.CallActivityAsync<ReservationResult>(nameof(ReserveSlotActivity), input);
+        if (!reservation.Success)
+        {
+            return new AppointmentResult(false, $"Reservation failed: {reservation.Message}");
+        }
 
-        // 3️⃣ الإشعار
-        var notify = await ctx.CallActivityAsync<NotificationResult>(nameof(SendNotificationActivity), input);
-        if (!notify.Success)
-            return new AppointmentResult(false, $"Notification failed: {notify.Message}");
+        // 3️⃣ Send notification (Log for patient and dentist)
+        var notification = await ctx.CallActivityAsync<NotificationResult>(nameof(SendNotificationActivity), input);
+        if (!notification.Success)
+        {
+            return new AppointmentResult(false, $"Notification failed: {notification.Message}");
+        }
 
-        return new AppointmentResult(true, "Appointment booked, payment processed, and notification sent!");
+        return new AppointmentResult(true, "Appointment validated, reserved, and notifications sent.");
     }
 }
 
 
+// ------------- Activity 1: ValidateAppointment -------------
 
-// 🦷 النشاط الأول: ReserveAppointmentActivity
-public class ReserveAppointmentActivity : WorkflowActivity<AppointmentInput, BookingResult>
+public class ValidateAppointmentActivity : WorkflowActivity<AppointmentInput, ValidationResult>
+{
+    private readonly ILogger<ValidateAppointmentActivity> _logger;
+
+    public ValidateAppointmentActivity(ILogger<ValidateAppointmentActivity> logger)
+    {
+        _logger = logger;
+    }
+
+    public override Task<ValidationResult> RunAsync(WorkflowActivityContext ctx, AppointmentInput input)
+    {
+        _logger.LogInformation("Validating appointment for {PatientName} on {Date}", input.PatientName, input.Date);
+
+        // 1) Date must be today or in the future
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+        if (input.Date < today)
+        {
+            return Task.FromResult(new ValidationResult(false, "Date is in the past."));
+        }
+
+        // 2) No more than N bookings in the same day for the same patient (simple logic)
+        const int MaxPerDay = 3;
+        if (input.NumberOfAppointmentsToday >= MaxPerDay)
+        {
+            return Task.FromResult(new ValidationResult(false,
+                $"Patient already has {input.NumberOfAppointmentsToday} appointments today."));
+        }
+
+        return Task.FromResult(new ValidationResult(true, "Validation succeeded."));
+    }
+}
+
+
+// ------------- Activity 2: ReserveSlot (state store) -------------
+
+public class ReserveSlotActivity : WorkflowActivity<AppointmentInput, ReservationResult>
 {
     private readonly DaprClient _dapr;
-    private readonly ILogger<ReserveAppointmentActivity> _logger;
+    private readonly ILogger<ReserveSlotActivity> _logger;
 
-    public ReserveAppointmentActivity(DaprClient dapr, ILogger<ReserveAppointmentActivity> logger)
+    public ReserveSlotActivity(DaprClient dapr, ILogger<ReserveSlotActivity> logger)
     {
         _dapr = dapr;
         _logger = logger;
     }
 
-    public override async Task<BookingResult> RunAsync(WorkflowActivityContext ctx, AppointmentInput input)
+    public override async Task<ReservationResult> RunAsync(WorkflowActivityContext ctx, AppointmentInput input)
     {
-        _logger.LogInformation("Calling BookingService from Orchestrator...");
+        // Simplified slot reservation: one slot per patient per day
+        var slotKey = $"slot-{input.PatientName}-{input.Date:yyyyMMdd}";
 
-        var http = DaprClient.CreateInvokeHttpClient("bookingservice");
-        var resp = await http.PostAsJsonAsync("/reserve", new
+        _logger.LogInformation("Trying to reserve slot {SlotKey} in Dapr state store...", slotKey);
+
+        // Try to read the value from state store
+        var existing = await _dapr.GetStateAsync<string>("statestore", slotKey);
+
+        if (!string.IsNullOrEmpty(existing))
         {
-            input.PatientName,
-            input.Date,
-            input.NumberOfAppointmentsToday
-        });
+            _logger.LogWarning("Slot {SlotKey} is already reserved.", slotKey);
+            return new ReservationResult(false, "This time slot is already reserved for this patient.");
+        }
 
-        resp.EnsureSuccessStatusCode();
-        return await resp.Content.ReadFromJsonAsync<BookingResult>() ?? new(false, "No response");
+        // Reserve the slot
+        await _dapr.SaveStateAsync("statestore", slotKey, "reserved");
+
+        _logger.LogInformation("Slot {SlotKey} reserved successfully.", slotKey);
+        return new ReservationResult(true, "Slot reserved.");
     }
 }
 
 
-// 💳 النشاط الثاني: ProcessPaymentActivity
-public class ProcessPaymentActivity : WorkflowActivity<AppointmentInput, PaymentResult>
-{
-    private readonly DaprClient _dapr;
-    private readonly ILogger<ProcessPaymentActivity> _logger;
+// ------------- Activity 3: SendNotification -------------
 
-    public ProcessPaymentActivity(DaprClient dapr, ILogger<ProcessPaymentActivity> logger)
-    {
-        _dapr = dapr;
-        _logger = logger;
-    }
-
-    public override async Task<PaymentResult> RunAsync(WorkflowActivityContext ctx, AppointmentInput input)
-    {
-        _logger.LogInformation("Calling PaymentService from Orchestrator...");
-
-        var http = DaprClient.CreateInvokeHttpClient("paymentservice");
-        var resp = await http.PostAsJsonAsync("/charge", new
-        {
-            input.PatientName,
-            input.Amount
-        });
-
-        resp.EnsureSuccessStatusCode();
-        return await resp.Content.ReadFromJsonAsync<PaymentResult>() ?? new(false, "No response");
-    }
-}
-
-// 📩 النشاط الثالث: SendNotificationActivity
 public class SendNotificationActivity : WorkflowActivity<AppointmentInput, NotificationResult>
 {
     private readonly ILogger<SendNotificationActivity> _logger;
@@ -144,20 +185,31 @@ public class SendNotificationActivity : WorkflowActivity<AppointmentInput, Notif
 
     public override async Task<NotificationResult> RunAsync(WorkflowActivityContext ctx, AppointmentInput input)
     {
-        _logger.LogInformation("Sending notification to {PatientName}...", input.PatientName);
+        _logger.LogInformation("Sending notifications for {PatientName} on {Date}...", input.PatientName, input.Date);
 
-        // منطق تجريبي (يمكن لاحقًا ربطه بخدمة خارجية)
-        await Task.Delay(1000); // محاكاة تأخير إرسال إشعار
-        _logger.LogInformation("Notification sent successfully to {PatientName}", input.PatientName);
+        // Here just a Log – in the future can connect to Email/SMS or Umbraco
+        await Task.Delay(500);
 
-        return new NotificationResult(true, $"Notification sent to {input.PatientName}");
+        _logger.LogInformation("Notification to patient {PatientName}: Your appointment on {Date} is confirmed.",
+            input.PatientName, input.Date);
+        _logger.LogInformation("Notification to dentist: New confirmed appointment for patient {PatientName} on {Date}.",
+            input.PatientName, input.Date);
+
+        return new NotificationResult(true, "Notifications sent.");
     }
 }
 
-public record NotificationResult(bool Success, string Message);
 
-// Shared DTOs
-public record AppointmentInput(string PatientName, DateOnly Date, int NumberOfAppointmentsToday, decimal Amount);
-public record BookingResult(bool Success, string Message);
-public record PaymentResult(bool Success, string Message);
+// --------- DTOs / Records used in the Workflow ---------
+
+public record AppointmentInput(
+    string PatientName,
+    DateOnly Date,
+    int NumberOfAppointmentsToday,
+    decimal Amount // Available for future use
+);
+
+public record ValidationResult(bool Success, string Message);
+public record ReservationResult(bool Success, string Message);
+public record NotificationResult(bool Success, string Message);
 public record AppointmentResult(bool Success, string Message);

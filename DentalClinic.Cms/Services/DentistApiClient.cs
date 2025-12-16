@@ -1,24 +1,23 @@
-﻿using System.Net.Http;
-using System.Net.Http.Json;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 
 namespace DentalClinic.Cms.Services
 {
-    public class DentistApiClient : IDentistApiClient
+    /// <summary>
+    /// In-memory dentist list for simplified architecture
+    /// </summary>
+    public class InMemoryDentistApiClient : IDentistApiClient
     {
-        private readonly HttpClient _http;
-
-        public DentistApiClient(HttpClient http)
+        private static readonly List<DentistDto> _dentists = new()
         {
-            _http = http;
-        }
+            new DentistDto { Id = Guid.Parse("11111111-1111-1111-1111-111111111111"), FullName = "Dr. Ahmad Al-Sayed" },
+            new DentistDto { Id = Guid.Parse("22222222-2222-2222-2222-222222222222"), FullName = "Dr. Fatima Hassan" },
+            new DentistDto { Id = Guid.Parse("33333333-3333-3333-3333-333333333333"), FullName = "Dr. Omar Khalil" }
+        };
 
-        public async Task<List<DentistDto>> GetDentistsAsync()
+        public Task<List<DentistDto>> GetDentistsAsync()
         {
-            var result = await _http.GetFromJsonAsync<List<DentistDto>>("/api/dentists");
-
-            return result ?? new List<DentistDto>();
+            return Task.FromResult(_dentists);
         }
     }
 }

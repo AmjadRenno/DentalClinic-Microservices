@@ -1,7 +1,5 @@
-﻿using AuthService.API.Data;
+using AuthService.API.Data;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace AuthService.API.Services
 {
@@ -27,7 +25,7 @@ namespace AuthService.API.Services
                 Email = email,
                 PasswordHash = HashPassword(password),
 
-                // 🔹 هنا نضبط الدور الافتراضي
+                // Here we set the default role
                 Role = "Patient"
             };
 
@@ -44,8 +42,8 @@ namespace AuthService.API.Services
             if (user is null)
                 return null;
 
-            var hash = HashPassword(password);
-            if (user.PasswordHash != hash)
+            // Use BCrypt.Verify to verify the password
+            if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                 return null;
 
             return user;
@@ -53,9 +51,8 @@ namespace AuthService.API.Services
 
         private string HashPassword(string password)
         {
-            using var sha = SHA256.Create();
-            var bytes = Encoding.UTF8.GetBytes(password);
-            return Convert.ToBase64String(sha.ComputeHash(bytes));
+            // BCrypt automatically generates Salt for each password
+            return BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
         }
     }
 }

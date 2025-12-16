@@ -9,22 +9,6 @@
 
 @await Html.PartialAsync("Partials/_FlashMessages")
 
-@* أخطاء Validation وغيرها *@
-@* @if (TempData["errors"] != null)
-{
-    <div style="color:red; margin-bottom:10px;">
-        @TempData["errors"]
-    </div>
-} *@
-
-@* رسائل النجاح *@
-@* @if (TempData["message"] != null)
-{
-    <div style="color:green; margin-bottom:10px;">
-        @TempData["message"]
-    </div>
-} *@
-
 @using (Html.BeginUmbracoForm<RegisterController>("SubmitRegister"))
 {
     <label>Full Name</label><br />

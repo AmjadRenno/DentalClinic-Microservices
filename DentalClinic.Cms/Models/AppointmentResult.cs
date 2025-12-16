@@ -4,9 +4,9 @@
 
     public string Status { get; set; }
 
-    public string DentistId { get; set; }   // يبقى كما هو
+    public string DentistId { get; set; }  
 
-    public string DentistName { get; set; }  // 👈 نضيف هذا
+    public string DentistName { get; set; } 
 
     public AppointmentSlot Slot { get; set; }
 }

@@ -17,7 +17,6 @@ namespace AuthService.API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest req)
         {
-            // تحقق بسيط جداً هنا (optional)
             if (string.IsNullOrWhiteSpace(req.FullName) ||
                 string.IsNullOrWhiteSpace(req.Email) ||
                 string.IsNullOrWhiteSpace(req.Password))

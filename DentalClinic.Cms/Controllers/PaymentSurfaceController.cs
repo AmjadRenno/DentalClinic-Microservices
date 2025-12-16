@@ -37,10 +37,10 @@ namespace DentalClinic.Cms.Controllers
         }
 
         [HttpPost]
-        // [ValidateAntiForgeryToken] // نتركها معطّلة حالياً لتجنب 400
+        // [ValidateAntiForgeryToken] // Currently disabled to avoid 400
         public async Task<IActionResult> Submit(PaymentFormViewModel model)
         {
-            // 1) Validation على المدخلات
+            // 1) Validation on inputs
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values
@@ -60,7 +60,7 @@ namespace DentalClinic.Cms.Controllers
 
             try
             {
-                // 👈 هذا الـ HttpClient مسجّل في Program.cs باسم "PaymentService"
+                // This HttpClient is registered in Program.cs as "PaymentService"
                 var client = _httpClientFactory.CreateClient("PaymentService");
 
                 var request = new
@@ -69,7 +69,7 @@ namespace DentalClinic.Cms.Controllers
                     Amount = model.Amount
                 };
 
-                // ✅ نرسل الطلب إلى PaymentService.API على /charge
+                // Send request to PaymentService.API on /charge
                 var response = await client.PostAsJsonAsync("/charge", request);
 
                 if (!response.IsSuccessStatusCode)
@@ -95,7 +95,7 @@ namespace DentalClinic.Cms.Controllers
                 TempData["PaymentError"] = "A system error occurred while processing payment.";
             }
 
-            // نرجع لنفس صفحة الـ Payment ليظهر الرسالة
+            // Return to the same Payment page to show the message
             return CurrentUmbracoPage();
         }
 

@@ -8,20 +8,20 @@
 @inject IHttpContextAccessor HttpContextAccessor
 
 @{
-    // نستخدم الـ layout العام
-    Layout = "master.cshtml";
+// Use the general layout
+Layout = "master.cshtml";
 
-    // نقرأ الـ JWT من الـ Session
+// Read JWT from Session
     var token = HttpContextAccessor.HttpContext?.Session.GetString("jwt");
 
     var appointments = new List<AppointmentResult>();
 
     if (!string.IsNullOrEmpty(token))
     {
-        // نضبط التوكن في الـ HttpClient
+        // Set the token in HttpClient
         Appointments.SetAuthToken(token);
 
-        // نجيب المواعيد من الـ Gateway (خاصة بالمريض الحالي)
+        // Get appointments from Gateway (for current patient)
         appointments = await Appointments.GetMyAppointmentsAsync() ?? new List<AppointmentResult>();
     }
 }
@@ -31,11 +31,7 @@
 @await Html.PartialAsync("Partials/_FlashMessages")
 
 
-@* @if (TempData["message"] != null)
-{
-    <p style="color: green">@TempData["message"]</p>
-}
- *@
+
 @if (string.IsNullOrEmpty(token))
 {
     <p>You must be logged in to see your appointments.</p>

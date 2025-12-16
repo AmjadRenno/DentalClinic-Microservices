@@ -3,10 +3,6 @@ using PaymentService.Application;
 using PaymentService.Application.Interfaces;
 using PaymentService.Infrastructure.Data;
 using PaymentService.Infrastructure.Repositories;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,43 +17,19 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 
-// JWT Settings
-var jwtKey = "this_is_my_super_secret_key_12345";
-var issuer = "DentalClinicAuth";
-var audience = "DentalClinicServices";
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = issuer,
-            ValidAudience = audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
-        };
-    });
-
-builder.Services.AddAuthorization();
-
 
 // ---------- APP ----------
 var app = builder.Build();
 
-app.UseAuthentication();
-app.UseAuthorization();
-
-
-// تأكيد إنشاء قاعدة البيانات
+// Ensure database is created
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
     db.Database.EnsureCreated();
 }
 
-// Middleware
+
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -67,8 +39,10 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseCloudEvents();  // ✅ دعم CloudEvents
-app.MapSubscribeHandler();  // ✅ يفعّل endpoint /dapr/subscribe
-app.UseHttpsRedirection();
+
+// Dapr
+app.UseCloudEvents();
+app.MapSubscribeHandler();
+
 app.MapControllers();
 app.Run();

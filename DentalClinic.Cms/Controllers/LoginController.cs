@@ -33,12 +33,11 @@ namespace DentalClinic.Cms.Controllers
             _http = http;
         }
 
-        // 🔹 تسجيل الدخول
+        // Login
         [HttpPost]
-        // لا نستخدم ValidateAntiForgeryToken في الـ MVP لتجنّب 400
         public async Task<IActionResult> SubmitLogin(LoginFormModel model)
         {
-            // 1) التحقق من صحة المدخلات
+            // 1) Validate inputs
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values
@@ -50,7 +49,7 @@ namespace DentalClinic.Cms.Controllers
                 return RedirectToCurrentUmbracoPage();
             }
 
-            // 2) استدعاء AuthService عبر IAuthApiClient
+            // 2) Call AuthService via IAuthApiClient
             var loginResult = await _authClient.LoginAsync(model.Email, model.Password);
 
             if (loginResult == null || string.IsNullOrEmpty(loginResult.token))
@@ -61,11 +60,11 @@ namespace DentalClinic.Cms.Controllers
 
             var http = _http.HttpContext!;
 
-            // 3) حفظ التوكن في Session
+            // 3) Save token in Session
             http.Session.SetString("jwt", loginResult.token);
             http.Session.SetString("CurrentUserEmail", model.Email);
 
-            // 4) حفظ الدور في Session (Patient أو Dentist)
+            // 4) Save role in Session (Patient or Dentist)
             var roleValue = loginResult.role ?? "Patient";
             http.Session.SetString("CurrentUserRole", roleValue);
 
@@ -74,9 +73,8 @@ namespace DentalClinic.Cms.Controllers
             return Redirect("/");
         }
 
-        // 🔹 تسجيل الخروج
+        // Logout
         [HttpPost]
-        // برضه بدون ValidateAntiForgeryToken في الـ MVP
         public IActionResult Logout()
         {
             var http = _http.HttpContext;
@@ -87,7 +85,6 @@ namespace DentalClinic.Cms.Controllers
                 http.Session.Remove("CurrentUserEmail");
                 http.Session.Remove("CurrentUserName");
                 http.Session.Remove("CurrentUserRole");
-                // أو http.Session.Clear();
             }
 
             TempData["message"] = "You have been logged out.";

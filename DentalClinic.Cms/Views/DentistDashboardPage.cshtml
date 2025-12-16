@@ -14,22 +14,22 @@
     var token = http.Session.GetString("jwt");
     var role = http.Session.GetString("CurrentUserRole");
 
-    var pageTitle = Model.Value<string>("pageTitle") ?? "Dentist Admin Panel";
+    var pageTitle = Model.Value<string>("pageTitle") ?? "Dentist Dashboard";
     var introText = Model.Value<string>("introText");
 
     List<AppointmentResult> appointments = new();
 
-    // ✅ فقط لو المستخدم Dentist نقرأ المواعيد من الـ API
+    // Only if user is Dentist, fetch appointments from API
     if (!string.IsNullOrEmpty(token) &&
         string.Equals(role, "Dentist", StringComparison.OrdinalIgnoreCase))
     {
         Appointments.SetAuthToken(token);
 
-        appointments = await Appointments.GetAdminAppointmentsAsync()
+        appointments = await Appointments.GetDentistAppointmentsAsync()
                        ?? new List<AppointmentResult>();
     }
 
-    // 🔹 فلترة المواعيد: نعرض فقط Requested + Confirmed وبشكل مرتب
+    // Filter appointments: show only Requested + Confirmed and sorted
     var activeAppointments = (appointments ?? new List<AppointmentResult>())
         .Where(a => a.Status == "Requested" || a.Status == "Confirmed")
         .OrderBy(a => a.Slot?.Date)
@@ -39,18 +39,6 @@
 
 <h1>@pageTitle</h1>
 @await Html.PartialAsync("Partials/_FlashMessages")
-
-@* @if (!string.IsNullOrWhiteSpace(introText))
-{
-    <div>
-        @Html.Raw(introText)
-    </div>
-} *@
-
-@* @if (TempData["dashboardMessage"] != null)
-{
-    <p>@TempData["dashboardMessage"]</p>
-} *@
 
 @if (string.IsNullOrEmpty(HttpContextAccessor.HttpContext!.Session.GetString("jwt")))
 {
@@ -83,10 +71,10 @@ else
             <tr>
                 <td>@a.Slot?.Date</td>
                 <td>@a.Slot?.Time</td>
-                <td>@a.DentistName</td> @* لاحقاً ممكن تستخدم اسم المريض لو أضفته *@
+                <td>@a.DentistName</td>
                 <td>@a.Status</td>
                 <td>
-                    @* Confirm فقط لو Requested *@
+                    @* Confirm only if Requested *@
                     @if (a.Status == "Requested")
                     {
                         @using (Html.BeginUmbracoForm<DentistDashboardController>("Confirm"))
@@ -96,7 +84,7 @@ else
                         }
                     }
 
-                    @* Cancel ما عدا لو بالفعل Cancelled أو Completed *@
+                    @* Cancel except if already Cancelled or Completed *@
                     @if (a.Status != "Cancelled" && a.Status != "Completed")
                     {
                         @using (Html.BeginUmbracoForm<DentistDashboardController>("Cancel"))

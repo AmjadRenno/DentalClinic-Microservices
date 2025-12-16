@@ -8,18 +8,6 @@
 <h1>Book an Appointment</h1>
 @await Html.PartialAsync("Partials/_FlashMessages")
 
-@* عرض الأخطاء *@
-@* @if (TempData["errors"] != null)
-{
-    <p style="color:red">@TempData["errors"]</p>
-} *@
-
-@* رسائل عامة (نجاح مثلاً) *@
-@* @if (TempData["message"] != null)
-{
-    <p style="color:green">@TempData["message"]</p>
-} *@
-
 @using (Html.BeginUmbracoForm<BookingController>("SubmitBooking"))
 {
     <label>Full Name</label><br />

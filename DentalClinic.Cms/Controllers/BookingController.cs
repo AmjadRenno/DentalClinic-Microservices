@@ -47,7 +47,7 @@ namespace DentalClinic.Cms.Controllers
         [HttpPost]
         public async Task<IActionResult> SubmitBooking(BookingFormModel model)
         {
-            // 1) Validation على المدخلات
+            // 1) Validation on inputs
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values
@@ -59,7 +59,7 @@ namespace DentalClinic.Cms.Controllers
                 return CurrentUmbracoPage();
             }
 
-            // 2) التأكد من أن المستخدم مسجّل الدخول
+            // 2) Ensure the user is logged in
             var token = _httpContextAccessor.HttpContext?.Session.GetString("jwt");
 
             if (string.IsNullOrEmpty(token))
@@ -70,7 +70,7 @@ namespace DentalClinic.Cms.Controllers
 
             _appointmentApi.SetAuthToken(token);
 
-            // 3) استدعاء الـ Gateway لإنشاء الموعد
+            // 3) Call the Gateway to create the appointment
             var appointmentId = await _appointmentApi.CreateAppointmentAsync(model);
 
             if (appointmentId == null)
@@ -79,7 +79,7 @@ namespace DentalClinic.Cms.Controllers
                 return CurrentUmbracoPage();
             }
 
-            // 4) تحويل المستخدم إلى صفحة الدفع مع المبلغ
+            // 4) Redirect the user to the payment page with the amount
             decimal amount = 250m;
             TempData["message"] = "Booking created. Redirecting to payment...";
 

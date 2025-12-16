@@ -1,7 +1,6 @@
 ﻿@inherits Microsoft.AspNetCore.Mvc.Razor.RazorPage<dynamic>
 
 <div class="flash-messages">
-    @* أخطاء عامة *@
     @if (TempData["errors"] != null)
     {
         <div class="alert alert-error">
@@ -9,7 +8,6 @@
         </div>
     }
 
-    @* رسائل نجاح/معلومات عامة *@
     @if (TempData["message"] != null)
     {
         <div class="alert alert-success">
@@ -17,7 +15,6 @@
         </div>
     }
 
-    @* رسالة لوحة تحكم الطبيب *@
     @if (TempData["dashboardMessage"] != null)
     {
         <div class="alert alert-info">
@@ -25,7 +22,6 @@
         </div>
     }
 
-    @* رسائل صفحة الدفع *@
     @if (TempData["PaymentError"] != null)
     {
         <div class="alert alert-error">

@@ -18,7 +18,7 @@ public sealed class Payment : AggregateRoot
     public Money Total { get; private set; }
     public PaymentStatus Status { get; private set; } = PaymentStatus.Pending;
 
-    // ✅ Constructor المستخدم في الكود العادي
+    // Constructor used in regular code
     public Payment(Guid id, Guid appointmentId, Money total)
         : base(id)
     {
@@ -26,7 +26,7 @@ public sealed class Payment : AggregateRoot
         Total = total;
     }
 
-    // ✅ Constructor فارغ خاص بـ EF Core
+    // Empty constructor for EF Core
     private Payment() : base(Guid.Empty) { }
 
     public void Authorize()

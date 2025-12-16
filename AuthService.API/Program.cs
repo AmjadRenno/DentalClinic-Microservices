@@ -12,13 +12,15 @@ builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("AuthDb"));
 });
 
-// 🆕 تسجيل UserService
 builder.Services.AddScoped<UserService>();
 
-// 🔐 JWT settings
-var jwtKey = builder.Configuration["Jwt:Key"];
-var issuer = builder.Configuration["Jwt:Issuer"];
-var audience = builder.Configuration["Jwt:Audience"];
+var jwtKey = builder.Configuration["Jwt:Key"]
+             ?? throw new InvalidOperationException("Jwt:Key is missing in configuration");
+var issuer = builder.Configuration["Jwt:Issuer"]
+             ?? throw new InvalidOperationException("Jwt:Issuer is missing in configuration");
+var audience = builder.Configuration["Jwt:Audience"]
+               ?? throw new InvalidOperationException("Jwt:Audience is missing in configuration");
+
 var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
 
 // Controllers + Swagger
@@ -26,22 +28,37 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Authentication
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+// Authentication + JWT Bearer
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.TokenValidationParameters = new()
+        options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateIssuerSigningKey = true,
+
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(1), 
+
             ValidIssuer = issuer,
             ValidAudience = audience,
             IssuerSigningKey = signingKey
         };
     });
 
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+
 
 if (app.Environment.IsDevelopment())
 {

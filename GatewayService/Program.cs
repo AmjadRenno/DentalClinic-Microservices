@@ -1,36 +1,48 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using System.Security.Claims;   // 👈 أضف هذا
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Aspire ServiceDefaults configuration
 builder.AddServiceDefaults();
 
-// --- JWT Authentication Settings ---
-var jwtKey = builder.Configuration["Jwt:Key"];
-var issuer = builder.Configuration["Jwt:Issuer"];
-var audience = builder.Configuration["Jwt:Audience"];
+// --- JWT Authentication configuration in the Gateway ---
+var jwtKey = builder.Configuration["Jwt:Key"]
+             ?? throw new InvalidOperationException("Jwt:Key is missing in configuration");
+var issuer = builder.Configuration["Jwt:Issuer"]
+             ?? throw new InvalidOperationException("Jwt:Issuer is missing in configuration");
+var audience = builder.Configuration["Jwt:Audience"]
+               ?? throw new InvalidOperationException("Jwt:Audience is missing in configuration");
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
+            // Same validation as in AuthService
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateIssuerSigningKey = true,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(1),
+
             ValidIssuer = issuer,
             ValidAudience = audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     });
 
-// CORS
+// Authorization (so we can use [Authorize] if needed in the future)
+builder.Services.AddAuthorization();
+
+// CORS (wide for development, can be narrowed in production)
 builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
     p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
-// YARP
+// YARP Reverse Proxy + Service Discovery
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
     .AddServiceDiscoveryDestinationResolver();
@@ -40,6 +52,16 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// HSTS only outside Development
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+
+// Redirect to HTTPS
+app.UseHttpsRedirection();
+
+// Swagger in development
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -48,63 +70,50 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 
-// ✅ 1) نفعّل الـ JWT في الـ Gateway
+// 1) Enable Authentication in the Gateway
 app.UseAuthentication();
 
-// ✅ 2) Middleware يقرأ الـ userId من الـ JWT ويحقنه كـ X-UserId
+// 2) Middleware to read userId from JWT and add it to X-UserId
 app.Use(async (context, next) =>
 {
-    Console.WriteLine($"🔍 Gateway: Path={context.Request.Path}, IsAuthenticated={context.User?.Identity?.IsAuthenticated}");
-    
-    // إذا المستخدم مصادق عليه (عبر JWT Authentication Middleware)
+    // If the user is authenticated by the Authentication middleware
     if (context.User?.Identity?.IsAuthenticated == true)
     {
         var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!string.IsNullOrEmpty(userId))
         {
-            Console.WriteLine($"✅ Gateway: Found userId from authenticated user: {userId}");
             context.Request.Headers["X-UserId"] = userId;
         }
     }
     else
     {
-        // إذا لم يكن authenticated، نحاول قراءة التوكن يدوياً من الـ Authorization header
+        // If not authenticated, try to read the token directly
         var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
-        Console.WriteLine($"🔑 Gateway: Authorization header = {(authHeader != null ? "Present" : "Missing")}");
-        
-        if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+
+        if (!string.IsNullOrEmpty(authHeader) &&
+            authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
             var token = authHeader.Substring("Bearer ".Length).Trim();
-            
+
             try
             {
                 var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
                 var jwtToken = handler.ReadJwtToken(token);
-                
-                // نستخرج الـ userId من الـ claims - نحاول كل الأنواع الممكنة
-                var userId = jwtToken.Claims.FirstOrDefault(c => 
-                    c.Type == ClaimTypes.NameIdentifier || 
-                    c.Type == "sub" || 
+
+                var userId = jwtToken.Claims.FirstOrDefault(c =>
+                    c.Type == ClaimTypes.NameIdentifier ||
+                    c.Type == "sub" ||
                     c.Type == "userId" ||
                     c.Type == "nameid")?.Value;
-                
+
                 if (!string.IsNullOrEmpty(userId))
                 {
-                    Console.WriteLine($"✅ Gateway: Extracted userId from JWT: {userId}");
                     context.Request.Headers["X-UserId"] = userId;
                 }
-                else
-                {
-                    Console.WriteLine($"⚠️ Gateway: Could not find userId in JWT claims. Available claims:");
-                    foreach (var claim in jwtToken.Claims)
-                    {
-                        Console.WriteLine($"   - {claim.Type} = {claim.Value}");
-                    }
-                }
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"❌ Gateway: Failed to parse JWT: {ex.Message}");
+                // JWT parsing failed, continue without userId
             }
         }
     }
@@ -112,11 +121,10 @@ app.Use(async (context, next) =>
     await next();
 });
 
+// 3) Authorization + YARP
 app.UseAuthorization();
 
-// ✅ 3) YARP Gateway
 app.MapReverseProxy();
-
 app.MapDefaultEndpoints();
 
 app.Run();
