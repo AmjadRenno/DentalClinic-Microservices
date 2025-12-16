@@ -69,7 +69,7 @@ This solution follows Domain-Driven Design (DDD) principles with a microservices
 
 ## Prerequisites
 
-- .NET 9 SDK
+- .NET 10 SDK
 - Docker Desktop (for Dapr and dependencies)
 - Dapr CLI
 
@@ -206,7 +206,7 @@ DentalClinic/
 
 ## Technologies Used
 
-- .NET 9
+- .NET 10
 - ASP.NET Core Web API
 - Entity Framework Core (SQLite)
 - Umbraco CMS
