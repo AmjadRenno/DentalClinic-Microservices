@@ -215,6 +215,7 @@ DentalClinic/
 - JWT Bearer Authentication
 - .NET Aspire
 - xUnit (for testing)
+- BCrypt password hashing
 
 ## Security Notes
 
@@ -227,6 +228,7 @@ DentalClinic/
   - Database files (`*.db`, `*.db-shm`, `*.db-wal`) are excluded from version control
   - No production data should be committed to the repository
   - Use separate databases for development, staging, and production environments
+- **Passwords are hashed using BCrypt (salted, slow hash function).
 
 ## License
 
