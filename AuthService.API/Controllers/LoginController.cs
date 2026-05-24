@@ -23,10 +23,10 @@ public class LoginController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var user = await _userService.ValidateUserAsync(request.Username, request.Password);
+        var (user, errorMessage) = await _userService.ValidateUserAsync(request.Username, request.Password);
 
         if (user is null)
-            return Unauthorized("Invalid credentials");
+            return Unauthorized(new { message = errorMessage ?? "Invalid credentials" });
 
         var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]);
         var creds = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256);

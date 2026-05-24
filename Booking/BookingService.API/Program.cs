@@ -3,6 +3,8 @@ using BookingService.Application.Interfaces;
 using BookingService.Application.Queries;
 using BookingService.Infrastructure.Data;
 using BookingService.Infrastructure.Repositories;
+using DentalClinic.SharedKernel.Middleware;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +16,9 @@ builder.Services.AddDbContext<BookingDbContext>(options =>
 builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 builder.Services.AddScoped<BookingApplicationService>();
 builder.Services.AddScoped<GetAppointmentsByPatientQuery>();
+
+// Add FluentValidation
+builder.Services.AddValidatorsFromAssemblyContaining<BookingApplicationService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -31,7 +36,8 @@ using (var scope = app.Services.CreateScope())
     db.Database.EnsureCreated();
 }
 
-
+// Global Exception Handler (must be early in the pipeline)
+app.UseGlobalExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
@@ -50,3 +56,6 @@ app.MapSubscribeHandler();
 app.MapControllers();
 
 app.Run();
+
+// Make the Program class accessible to integration tests
+public partial class Program { }

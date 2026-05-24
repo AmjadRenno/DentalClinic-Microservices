@@ -8,7 +8,9 @@
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="Dapr.AspNetCore" Version="1.14.0" />
     <ProjectReference Include="..\DentalClinic.ServiceDefaults\DentalClinic.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\shared\DentalClinic.SharedKernel\DentalClinic.SharedKernel.csproj" />
 	<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
 	<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
 	<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">

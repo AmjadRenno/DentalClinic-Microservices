@@ -2,8 +2,13 @@
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Security.Claims;
+using AspNetCoreRateLimit;
+using DentalClinic.SharedKernel.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Load rate limiting configuration
+builder.Configuration.AddJsonFile("ratelimitsettings.json", optional: false, reloadOnChange: true);
 
 // Aspire ServiceDefaults configuration
 builder.AddServiceDefaults();
@@ -38,9 +43,40 @@ builder.Services
 // Authorization (so we can use [Authorize] if needed in the future)
 builder.Services.AddAuthorization();
 
-// CORS (wide for development, can be narrowed in production)
-builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
-    p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+// Rate Limiting - IP based
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+builder.Services.Configure<IpRateLimitPolicies>(builder.Configuration.GetSection("IpRateLimitPolicies"));
+builder.Services.AddInMemoryRateLimiting();
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
+// CORS - Strict policies for production
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() 
+    ?? new[] { "http://localhost:3000", "http://localhost:5173" }; // Default for dev
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        if (builder.Environment.IsDevelopment())
+        {
+            // Development: Allow specific origins
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        }
+        else
+        {
+            // Production: Strict CORS
+            policy.WithOrigins(allowedOrigins)
+                  .WithHeaders("Content-Type", "Authorization", "X-Requested-With")
+                  .WithMethods("GET", "POST", "PUT", "DELETE")
+                  .AllowCredentials()
+                  .SetIsOriginAllowedToAllowWildcardSubdomains();
+        }
+    });
+});
 
 // YARP Reverse Proxy + Service Discovery
 builder.Services.AddReverseProxy()
@@ -51,6 +87,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// Security Headers - Add early in pipeline
+app.UseSecurityHeaders();
 
 // HSTS only outside Development
 if (!app.Environment.IsDevelopment())
@@ -69,6 +108,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors();
+
+// Rate Limiting (must be before authentication)
+app.UseIpRateLimiting();
 
 // 1) Enable Authentication in the Gateway
 app.UseAuthentication();
@@ -128,3 +170,6 @@ app.MapReverseProxy();
 app.MapDefaultEndpoints();
 
 app.Run();
+
+// Make Program accessible to tests
+public partial class Program { }

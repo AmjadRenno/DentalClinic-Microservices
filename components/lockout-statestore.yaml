@@ -1,0 +1,16 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: lockout-statestore
+spec:
+  type: state.redis
+  version: v1
+  metadata:
+  # For development, use in-memory state store
+  # For production, configure Redis connection string
+  - name: redisHost
+    value: localhost:6379
+  - name: redisPassword
+    value: ""
+  - name: actorStateStore
+    value: "true"

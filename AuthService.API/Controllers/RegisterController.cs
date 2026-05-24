@@ -21,15 +21,15 @@ namespace AuthService.API.Controllers
                 string.IsNullOrWhiteSpace(req.Email) ||
                 string.IsNullOrWhiteSpace(req.Password))
             {
-                return BadRequest("Missing fields.");
+                return BadRequest(new { message = "Missing fields." });
             }
 
-            var ok = await _users.RegisterUserAsync(req.FullName, req.Email, req.Password);
+            var (success, errorMessage) = await _users.RegisterUserAsync(req.FullName, req.Email, req.Password);
 
-            if (!ok)
-                return Conflict("Email already exists");
+            if (!success)
+                return BadRequest(new { message = errorMessage });
 
-            return Ok(new { message = "User registered" });
+            return Ok(new { message = "User registered successfully" });
         }
     }
 

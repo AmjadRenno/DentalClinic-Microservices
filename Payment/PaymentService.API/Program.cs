@@ -3,6 +3,8 @@ using PaymentService.Application;
 using PaymentService.Application.Interfaces;
 using PaymentService.Infrastructure.Data;
 using PaymentService.Infrastructure.Repositories;
+using DentalClinic.SharedKernel.Middleware;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +14,9 @@ builder.Services.AddDbContext<PaymentDbContext>(options =>
 
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<PaymentApplicationService>();
+
+// Add FluentValidation
+builder.Services.AddValidatorsFromAssemblyContaining<PaymentApplicationService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -28,7 +33,8 @@ using (var scope = app.Services.CreateScope())
     db.Database.EnsureCreated();
 }
 
-
+// Global Exception Handler (must be early in the pipeline)
+app.UseGlobalExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
@@ -46,3 +52,6 @@ app.MapSubscribeHandler();
 
 app.MapControllers();
 app.Run();
+
+// Make the Program class accessible to integration tests
+public partial class Program { }

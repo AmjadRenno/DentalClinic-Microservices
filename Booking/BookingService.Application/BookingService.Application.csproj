@@ -10,6 +10,8 @@
     <ProjectReference Include="..\..\shared\DentalClinic.SharedKernel\DentalClinic.SharedKernel.csproj" />
     <ProjectReference Include="..\BookingService.Domain\BookingService.Domain.csproj" />
     <PackageReference Include="Dapr.Client" Version="1.16.1" />
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
   </ItemGroup>
 
   <PropertyGroup>

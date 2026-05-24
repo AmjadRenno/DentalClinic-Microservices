@@ -4,12 +4,33 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using DentalClinic.SharedKernel.Middleware;
+using DentalClinic.SharedKernel.Security;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add Dapr client
+builder.Services.AddDaprClient();
 
 builder.Services.AddDbContext<AuthDbContext>(options =>
 {
     options.UseSqlite(builder.Configuration.GetConnectionString("AuthDb"));
+});
+
+// Security services
+builder.Services.AddSingleton<PasswordValidator>(sp => new PasswordValidator(PasswordPolicy.Strict));
+
+// Use Dapr-based distributed lockout service for production-ready account lockout
+builder.Services.AddSingleton<IAccountLockoutService>(sp => 
+{
+    var daprClient = sp.GetRequiredService<Dapr.Client.DaprClient>();
+    return new DaprAccountLockoutService(
+        daprClient,
+        stateStoreName: "lockout-statestore",
+        maxFailedAttempts: 5,
+        lockoutDuration: TimeSpan.FromMinutes(15),
+        failedAttemptWindow: TimeSpan.FromMinutes(10)
+    );
 });
 
 builder.Services.AddScoped<UserService>();
@@ -51,6 +72,9 @@ builder.Services
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+// Global Exception Handler (must be early in the pipeline)
+app.UseGlobalExceptionHandler();
 
 if (!app.Environment.IsDevelopment())
 {

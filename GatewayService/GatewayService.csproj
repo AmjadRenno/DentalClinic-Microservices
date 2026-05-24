@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.ServiceDiscovery.Yarp" Version="10.0.0" />
     <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
 	<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
@@ -17,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DentalClinic.ServiceDefaults\DentalClinic.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\shared\DentalClinic.SharedKernel\DentalClinic.SharedKernel.csproj" />
   </ItemGroup>
 
 </Project>

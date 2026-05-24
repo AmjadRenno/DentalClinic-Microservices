@@ -9,6 +9,8 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\shared\DentalClinic.SharedKernel\DentalClinic.SharedKernel.csproj" />
 		<ProjectReference Include="..\PaymentService.Domain\PaymentService.Domain.csproj" />
+		<PackageReference Include="FluentValidation" Version="11.11.0" />
+		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
 	</ItemGroup>
 
 </Project>

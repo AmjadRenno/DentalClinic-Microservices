@@ -2,7 +2,14 @@
 
 A microservices-based dental clinic management system built with .NET 9, featuring appointment booking, payment processing, and CMS capabilities.
 
-## 📸 Screenshots
+## � Documentation
+
+- 📖 **[Testing & Error Handling](docs/TESTING_AND_ERROR_HANDLING.md)** - Comprehensive testing infrastructure and error handling implementation
+- ⚡ **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Quick commands and code snippets
+- 🔒 **[Configuration Security Guide](docs/CONFIGURATION_SECURITY.md)** - Security best practices
+- ✅ **[Project Checklist](docs/CHECKLIST.md)** - Development progress tracker
+
+## �📸 Screenshots
 
 > **Note**: All screenshots and diagrams are organized in the [`docs/`](docs/) folder.
 
@@ -69,7 +76,7 @@ This solution follows Domain-Driven Design (DDD) principles with a microservices
 
 ## Prerequisites
 
-- .NET 10 SDK
+- .NET 9 SDK
 - Docker Desktop (for Dapr and dependencies)
 - Dapr CLI
 
@@ -206,7 +213,7 @@ DentalClinic/
 
 ## Technologies Used
 
-- .NET 10
+- .NET 9
 - ASP.NET Core Web API
 - Entity Framework Core (SQLite)
 - Umbraco CMS
@@ -215,7 +222,6 @@ DentalClinic/
 - JWT Bearer Authentication
 - .NET Aspire
 - xUnit (for testing)
-- BCrypt password hashing
 
 ## Security Notes
 
@@ -228,7 +234,6 @@ DentalClinic/
   - Database files (`*.db`, `*.db-shm`, `*.db-wal`) are excluded from version control
   - No production data should be committed to the repository
   - Use separate databases for development, staging, and production environments
-- **Passwords are hashed using BCrypt (salted, slow hash function).
 
 ## License
 
